@@ -1,0 +1,183 @@
+<script type="text/javascript" charset="UTF-8">
+  var center = [];
+  var user = '<%- JSON.stringify(user)%>'
+
+  var $$quizWidow = null;//回复窗体;
+
+  function login() { location.href = '/user/login'; }
+  function reg() { location.href = '/user/reg'; }
+  // var test = 'test';
+  (function () {
+    if (user.length != 0) {
+      user = JSON.parse(user);
+    } else {
+      user = null;
+    }
+    initcenter();//初始化center对象
+  })();
+
+  function initcenter() {
+    if (!user) {
+      var usercenter = [{ view: 'template', template: '<h1>歡迎來到 小春春的意见管理DEMO</h1>', autoheight: true },
+      { template: '<p>意见回复demo 绑定用户id进行意见的CURD操作</p>', autoheight: true },
+      {
+        cols: [
+          { view: 'button', click: login, value: '登入', autoheight: true },
+          { view: 'button', click: reg, value: '注册', autoheight: true }
+        ]
+      }];
+      usercenter.forEach(function (value) {
+        center.push(value);
+      });
+    } else {
+      //提问按钮
+      var quizView = [
+        {
+          view: 'toolbar', elements: [
+            { view: 'button', id: 'quizButton', autoheight: true, autowidth: true, value: "提问", click: quiz },
+            {
+              view: 'button', id: 'ideaReply', value: '回复', autoheight: true, autowidth: true, click: function () {
+                location.href = '/idea/reply';
+              },
+            }
+          ]
+        }
+      ];
+      // center.push(quizView);
+      quizView.forEach(function (value) {
+        center.push(value);
+      })
+    }
+
+    var Idea = [
+      {
+        view: 'datatable', id: 'ideaTable', autoheight: true,
+        resizeColumn: true,//列为可拖动类型
+        // pager,
+        pager: 'tablePager',
+        columns: [
+          { id: 'productType', header: { text: '产品类型', css: 'text_align' }, width: 150 },
+          { id: 'headLine', header: { text: '标题', css: 'text_align' }, width: 400, fillspace: true, css: 'text_align' },
+          { id: 'phoneNum', header: { text: '联系方式', css: 'text_align' }, width: 250, css: 'text_align' },
+          { id: 'status', header: { text: '状态', css: 'text_align' }, width: 150, css: 'text_align', },
+          { template: '<a class="ideaDelete">删除&#09;</a><a class="ideaOver">完结</a>', header: { text: '操作', css: 'text_align' }, width: 100, css: 'text_align' }
+        ],
+        url: '/idea/get',
+        onClick: {
+          //点击删除触发事件
+          "ideaDelete": function (e, id, object) {
+            // webix.ajax().delete('/ideaDelete',);
+            var ideaId = $$('ideaTable').getItem(id)._id;
+            webix.ajax().del('/idea/delete', { _Id: ideaId }, function (text, xml, xhr) {
+              var result = xml.json();
+              if (result.status) {
+                $$('ideaTable').clearAll();
+                $$('ideaTable').load('/idea');
+              } else {
+                webix.message({ type: 'error', text: result.message });
+              }
+            });
+          },
+          "ideaOver": function (e, id, object) {
+            var ideaId = $$('ideaTable').getItem(id)._id;
+            webix.ajax().put('/idea/over', { _id: ideaId }, function (text, xml, xhr) {
+              var result = xml.json();
+              if (result.status) {
+                if (result.status) {
+                  $$('ideaTable').clearAll();
+                  $$('ideaTable').load('/idea');
+                } else {
+                  webix.message({ type: 'error', text: result.message });
+                }
+              }
+            })
+          }
+        }
+
+      },
+      {
+        view: 'pager', id: 'tablePager', size: 5, group: 5
+      }
+    ];
+    Idea.forEach(function (value) {
+      center.push(value);
+    });
+  }
+
+  //   on:{
+  //     onBefore:function(){}
+  //   }
+  // onClick:{
+  //   className:function(a,b,c){}
+  // }
+
+  //回复意见
+  function quiz() {
+    // var ;
+    if (!$$("quizWindow")) {
+      $$quizWidow = webix.ui({
+        view: 'window', id: 'quizWindow', position: "center", move: true, modal: true, width: 500, height: 600,
+        head: {
+          view: 'toolbar', cols: [
+            { view: 'label', label: '在线反馈' }, {}, {},
+            {
+              view: 'button', type: 'icon', icon: 'remove', width: 50,
+              click: function () {
+                $$('ideaForm').clear();
+                $$('quizWindow').hide();
+              }
+            },
+            // { view: 'coin', coin: 'envelope' }
+            // { view: "icon", icon: "deaf", align: "left" }
+          ]
+        },
+        body: {
+          view: 'form', id: 'ideaForm', elements: [
+            { view: 'text', label: '标题*', name: 'headLine' },
+            {
+              view: 'radio', label: '产品类型', value: 1, name: 'productType', options: [
+                { id: 'eAudit', value: 'eAudit', name: 'eAudit' },
+                { id: 'PQM', value: 'PQM' },
+                { id: 'PDM', value: 'PDM' },
+                { id: 'WMS', value: 'WMS' },
+                { id: 'SCC', value: 'SCC' }
+              ]
+            },
+            { view: 'text', label: '反馈内容', name: 'context' },
+            { view: 'text', label: '联系手机', name: 'phoneNum' },
+            {
+              cols: [
+                {
+                  view: 'button', value: '提交', type: 'form', click: function () {
+                    var ideaForm = $$('ideaForm').getValues();
+                    //提交意见
+                    webix.ajax().post('/idea/put', ideaForm, function (xml, data) {
+                      var result = data.json();
+                      if (result.status) {
+                        $$('quizWindow').hide();
+                        $$('ideaTable').clearAll();
+                        $$('ideaTable').load('/idea/get');
+                      }
+                    });
+                  }
+                },
+                { view: 'button', value: '取消' }
+              ]
+            }
+
+          ]
+        }
+      });
+    }
+
+    //意见窗体存在且不可见时，显示窗体
+    if (!!$$quizWidow && !$$quizWidow.isVisible()) {
+
+      $$quizWidow.show();
+    } else {
+      webix.message({ type: "Error", text: "窗体异常" });
+    }
+
+  }
+
+</script>

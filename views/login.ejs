@@ -1,0 +1,47 @@
+<script type="text/javascript" charset="UTF-8">
+    var center = [];
+
+    (function () {
+        initcenter();
+    })();
+
+    //初始化center Json对象
+    function initcenter() {
+        var loginForm = {
+            paddingY: 100,
+            cols: [
+                {}, {
+                    view: 'form',
+                    id: 'loginForm',
+
+                    elements: [
+                        { view: 'button', icon: 'address-card', type: 'icon', label: '登录', align: 'left' },
+                        { view: 'text', label: '用户名', name: "userName" },
+                        { view: 'text', label: '密码', name: 'password', type: 'password' },
+                        {
+                            margin: 5, cols: [
+                                {
+                                    view: 'button', value: "登入", type: 'form', click: function () {
+                                        // debugger
+                                        var params = $$('loginForm').getValues()
+                                        webix.ajax().post('/user/login', params, function (text, xml, xhr) {
+                                            var result = xml.json();
+                                            if (result.status) {
+                                                location.href = '/';
+                                            } else {
+                                                webix.message({ type: "Error", text: result.message });
+                                            }
+                                        })
+                                    }
+                                },
+                                { view: 'button', value: '取消' }
+                            ]
+                        }
+                    ]
+                }, {}
+            ]
+        };
+        center.push(loginForm);
+    }
+
+</script>

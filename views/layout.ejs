@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<link rel="stylesheet" type="text/css" href="/stylesheets/webix.css" charset="UTF-8"></link>
+	<!-- <link rel="stylesheet" type="text/css" href="/stylesheets/font-awesome.css"></link> -->
+	<!-- <link href="/fonts/fontawesome-webfont.woff"></link> -->
+	<script src="/javascripts/moment.min.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/javascripts/webix.js" type="text/javascript" charset="UTF-8"></script>
+</head>
+<style>
+	body {
+		margin: 0 auto;
+	}
+
+	.text_align {
+		text-align: center;
+	}
+</style>
+
+<body>
+	<div id="container">
+		<%- body%>
+	</div>
+</body>
+
+<script type="text/javascript" charset="UTF-8">
+	var user = '<%- JSON.stringify(user) %>';
+
+	var container = {
+		view: 'layout',
+		id: 'container',
+		rows: [
+			{
+				id: 'top', view: 'toolbar',
+				cols: [
+					{ id: 'topLabel', view: 'label', label: 'WEBIX DEMO', autoheight: true, width: 200, align: 'left' }, {},
+				]
+			},
+			{ id: 'foot', view: 'label', label: '<Strong>byHalu&#10;</Strong><a>2017</a>', autoheight: true, align: 'right' }
+		]
+	};
+
+	//判断user是否已登入动态添加ui
+	function loadTopButton() {
+		var top = $$('top').index($$('topLabel'));
+		top++;
+		if (user) {
+			$$('top').addView({
+				view: 'button', value: '登出', width: 100, align: "right", click: function () {
+					webix.ajax().get('/user/logout', null, function (text, xml, xhr) {
+						let result = xml.json();
+						if (result.status) {
+							location.href = '/';
+						} else {
+							webix.message({ type: "Error", text: result.message });
+						}
+					});
+				}
+			}, ++top)
+		} else {
+			$$('top').addView({ view: 'button', value: '登入', width: 100, align: "right" }, ++top);
+			$$('top').addView({ view: 'button', value: '注册', width: 100, align: "right" }, ++top);
+
+		}
+	}
+
+	//加载center模块
+	function loadcenter() {
+		var insertCount = $$('container').index($$('top'));;
+		center.forEach(function (value) {
+			$$('container').addView(value, (++insertCount));
+		});
+	}
+
+	(function () {
+		init();
+	})();
+
+	function init() {
+		initData();
+		webix.ui(container);
+		loadTopButton();
+		loadcenter();
+
+	}
+	//接受服务器参数通过JSON.parse解析成对象
+	function initData() {
+
+		if (user.length != 0) {
+			user = JSON.parse(user);
+		} else { user = null; }
+		// if (error.length != 0) {
+		// 	error = JSON.parse(error);
+		// } else { error = null; }
+	}
+
+</script>
+
+</html>

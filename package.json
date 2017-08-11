@@ -1,0 +1,25 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "description": "express+node.js+mongodb+webix    demo",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "~1.17.1",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.3",
+    "connect": ">= 1.x",
+    "connect-mongo": ">= 0.1.7",
+    "ejs": "*",
+    "express": "4.15.0",
+    "mongodb": ">= 0.9.9",
+    "mongoose": "^4.5.0",
+    "serve-favicon": "~2.4.2",
+    "morgan": "~1.8.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "halu",
+  "license": "ISC"
+}

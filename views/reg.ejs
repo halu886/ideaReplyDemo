@@ -1,0 +1,56 @@
+<script type="text/javascript" charset="UTF-8">
+    var center = [{
+        paddingY: 100,
+        cols: [
+            {}, {
+                id: 'regForm',
+                view: 'form',
+                rules: {//验证规则
+                    userName: webix.rules.isNotEmpty,
+                    repeatPassword: function (x, y, z) {
+                        // webix.rules.isNotEmpty(x);
+                        // debugger
+                        //密码不能为空且密码得与验证密码相同
+                        if (webix.rules.isNotEmpty(x) && (x === y.password)) {
+                            return true;
+                        }
+                        return false;
+                    },
+                    password: webix.rules.isNotEmpty
+                },
+                // width: 500,
+                elements: [
+                    { view: 'text', label: '用户名', inputAlign: "right", name: 'userName' },
+                    { view: 'text', label: '密码', type: 'password', inputAlign: 'right', name: 'password' },
+                    { view: 'text', label: '确认密码', type: 'password', inputAlign: 'right', name: 'repeatPassword' },
+                    // {},
+                    {
+                        margin: 5,
+                        cols: [
+                            {
+                                view: 'button', value: '注册', type: 'form',
+                                click: function () {
+                                    var $$regForm = $$('regForm');
+                                    if (!$$regForm.validate()) return;//表单未验证时返回
+                                    webix.ajax().post('/user/reg',
+                                        $$regForm.getValues(),
+                                        function (data, xml, xhr) {
+                                            var result = xml.json();
+                                            if (result.status) {
+                                                // webix.message({ type: 'success', text: result.message });
+                                                location.href = '/';
+                                            } else {
+                                                webix.message({ type: 'erro', text: result.message });
+                                            }
+                                        })
+                                }
+                            },
+                            { view: 'button', value: '取消', click: function () { $$('regForm').clear() } }
+                        ]
+                    }
+                ]
+            }, {}
+        ]
+    }];
+
+</script>

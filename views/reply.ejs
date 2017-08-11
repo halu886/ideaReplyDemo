@@ -1,0 +1,163 @@
+<script type="text/javascript" charset="UTF-8">
+    var user = null;//登入用户
+    var ideaData = null;//意见数据
+    var replyWindow = null;//reply窗口
+
+    var item;//将窗体加载所需参数设为全局对象
+
+    var query = null;//表单加载所需要的参数
+
+    var center = [];//加载进布局layout页面的json对象
+    (function init() {
+        user = '<% JSON.stringify(user) %>'
+        if (user.length) {
+            user = JSON.parse(user);
+        }
+        initcenter();
+    })();
+
+    function initcenter() {
+        var list = {
+            id: 'test',
+            height: 500,
+            cols: [
+                {
+                    view: 'list', template: '#productType#', select: true,
+                    autoheight: true,
+                    width: 200,
+                    data: [
+                        { id: '1', name: 'eAudit', productType: 'eAudit' },
+                        { id: '2', name: 'PQM', productType: 'PQM' },
+                        { id: '3', name: 'PDM', productType: 'PDM' },
+                        { id: '4', name: 'WMS', productType: 'WMS', css: "showIdea" },
+                        { id: '5', name: 'SCC', productType: 'SCC' }
+                    ],
+                    on: {
+                        //通过意见类型加载数据
+                        "onItemClick": function (e, id, trg) {
+                            var param = {};
+                            query = { productType: trg.textContent, user_id: user._id };
+                            param.query = query;
+                            webix.ajax().post('/idea/getByType', param, function (text, xml, xhr) {
+                                var result = xml.json();
+                                if (result.status) {
+                                    refreshData($$('ideaTable'), result.ideaDatas);
+                                    // var $$ideaTable = ;
+
+                                } else {
+                                    webix.message({ type: 'error', text: result.message });
+                                }
+                            });
+                        }
+                    }
+
+                },
+                {
+                    view: 'datatable', id: 'ideaTable',
+                    columns: [
+                        { id: 'headLine', header: { text: '标题', css: 'text_align' }, width: 100, fillspace: true, css: 'text_align' },
+                        { id: 'phoneNum', header: { text: '联系方式', css: 'text_align' }, width: 100, css: 'text_align', fillspace: true },
+                        { id: 'status', header: { text: '状态', css: 'text_align' }, width: 100, css: 'text_align', fillspace: true },
+                        { id: 'method', header: { text: '操作', css: 'text_align' }, width: 100, css: 'text_align', fillspace: true, template: '<a class="reply">回复</a>' }
+                    ],
+                    onClick: {
+                        "reply": function (e, id, trg) {
+                            var selectItem = $$('ideaTable').getItem(id.row);//当前选中的item
+                            if (selectItem.status == '已回复') {
+                                return webix.message({ type: 'info', text: '已回复' });
+                            }
+                            if (!!item && selectItem._id == item._id) {//选中item与上一次相同时，直接show()
+                                return replyWindow.show();
+                            } else {//否则初始化一个窗体
+                                item = selectItem;
+                                if (!!replyWindow && replyWindow.close());
+                                replyWindow = null;
+                                initReplyWindow(item);
+                            }
+                            //判断回复操作是否可选&&窗体是否存在且可视化
+                            // if (!replyWindow) {
+                            //     initReplyWindow(item);
+                            // }
+                            if (!!replyWindow && !replyWindow.isVisible()) {
+                                replyWindow.show();
+                            } else {
+                                webix.message({ type: 'info', text: '不可回复' });
+                            }
+                        }
+                        // );
+                    }
+                }
+            ]
+        };
+
+        center.push(list);
+    }
+
+    //刷新数据
+    function refreshData(table, data) {
+        table.clearAll();
+        data.forEach(function (value) {
+            table.add(value);
+        });
+    }
+
+    //初始化回复窗体
+    function initReplyWindow(item) {
+        replyWindow = webix.ui({
+            view: 'window', move: true, width: 400, modal: true, position: 'center',
+            head: {
+                viwe: 'toolBar', cols: [
+                    { view: 'label', label: '回复意见', width: 100, css: 'text_align', }, {},
+                    {
+                        view: 'button', type: 'icon', icon: 'remove', width: 30, click: function () {
+                            if (!!replyWindow && replyWindow.isVisible()) {
+                                replyWindow.hide();
+                                // replyWindow = null;
+                            }
+                        }
+                    }
+                ]
+            },
+            body: {
+                rows: [
+                    { view: 'label', label: item.headLine, css: { 'font-size': '30px' } },
+                    {
+                        cols: [
+                            { width: 10 },
+                            { view: 'label', template: user.userName, css: { 'font-size': '23px' }, width: 50 },
+                            { view: 'label', label: "发布日期:  " + (moment(item.publishDate).format('MMM Do YY')) }
+                        ]
+                    },
+                    { view: 'label', label: item.productType, css: { 'font-size': '20px' } },
+                    {
+                        view: 'form', id: 'replyForm', elements: [
+                            { view: 'label', label: '管理员' },
+                            { view: 'text', id: 'reply', name: 'reply' },
+                            {
+                                view: 'button', value: '发表回复',
+                                click: function () {
+                                    var reply = $$('replyForm').getValues();
+                                    reply.user_id = user._id;
+                                    reply._id = item._id;
+                                    reply.query = query;
+                                    webix.ajax().post('/idea/reply', reply, function (text, xml, xhr) {
+                                        var result = xml.json();
+                                        if (result.status) {
+                                            webix.message({ type: 'success', text: result.message });
+                                            refreshData($$('ideaTable'), result.ideaDatas);
+                                            replyWindow.close();
+                                            replyWindow = null;
+                                        } else {
+                                            webix.message({ type: 'error', text: result.message });
+                                        }
+                                    });
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+    }
+
+</script>
