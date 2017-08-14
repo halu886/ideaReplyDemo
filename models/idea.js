@@ -19,6 +19,8 @@ var ideaSchema = new mongoose.Schema({
     reply: String,
     publishDate: Date,
     replyDate: Date,
+    fileName: Array,
+    filePath: Array,
     user_id: String
 });
 

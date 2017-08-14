@@ -8,6 +8,24 @@ var router = require("express").Router();
 
 var Idea = require('../models/idea');
 
+var multer = require("multer");
+
+
+//图片上传模块封装
+// multer.di
+var Storage = multer.diskStorage({
+    destination: function (req, file, callback) {
+        callback(null, "./public/images");
+    },
+    filename: function (req, file, callback) {
+        callback(null, file.fieldname + "_" + Date.now() + "_" + file.originalname);
+        return "test";
+    }
+})
+
+///创建multer对象接受Storage选项,设置文件名
+var upload = multer({ storage: Storage }).array("upload", 3);//field name and max count
+
 // export
 module.exports = router;
 
@@ -17,7 +35,7 @@ router.get('/reply', function (rep, res) {
 });
 
 //意见删除
-router.delete('delete', function (req, res) {
+router.delete('/delete', function (req, res) {
     var result = {};
     result.status = false;
     if (!req.body._id) {
@@ -36,7 +54,6 @@ router.delete('delete', function (req, res) {
         result.message = "删除成功";
         return res.send(result);
     });
-
 });
 
 //获取意见
@@ -55,6 +72,31 @@ router.get('/get', function (req, res, next) {
 
 });
 
+router.post('/photoUpload', function (req, res) {
+    upload(req, res, function (err) {
+        var result = {};
+        result.message = '图片上传失败';
+        result.status = "error";
+        if (err) {
+            console.error(err.stack);
+            result.message = err;
+            return res.send(JSON.stringify(result));//返回JSON对象字符串
+        } else {
+            result.status = "server";
+            result.fileName = [];
+            result.filePath = [];
+            req.files.forEach(function (value, i) {
+                result.fileName[i] = value.filename;
+                result.filePath[i] = value.path;
+            })
+            result.message = '提交成功';
+            // result = JSon.stringify(result)
+            return res.send(JSON.stringify(result));
+        }
+    })
+});
+
+
 //提交意见
 router.post('/put', function (req, res) {
     var resData = {};
@@ -71,6 +113,8 @@ router.post('/put', function (req, res) {
         status: '待回复',
         publishDate: new Date(),
         replyDate: null,
+        fileName: req.body.fileName ? JSON.parse(req.body.fileName) : null,
+        filePath: req.body.filePath ? JSON.parse(req.body.filePath) : null,
         user_id: req.session.user._id
     }
     var idea = new Idea(ideaParam);
@@ -145,18 +189,22 @@ router.post('/reply', function (req, res) {
         });
 });
 
-router.get('/over', function (req, res) {
+router.put('/over', function (req, res) {
     var result = {};
     result.status = false;
     result.message = '完结失败';
-    if (req.body._id) {
+    if (!req.body._id) {
         return res.send(result);
     }
-    Idea.remove({ _id: req.body._id }, function (err) {
-        if (!err) {
+    // Idea.u
+    Idea.findByIdAndUpdate(req.body._id, { status: '已完结' }, function (err) {
+        if (err) {
+            result.message = err;
+        } else {
             result.status = true;
             result.message = '完结成功';
         }
+        // result.message = err;
         return res.send(result);
     })
 })

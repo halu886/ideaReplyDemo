@@ -68,24 +68,29 @@
           "ideaDelete": function (e, id, object) {
             // webix.ajax().delete('/ideaDelete',);
             var ideaId = $$('ideaTable').getItem(id)._id;
-            webix.ajax().del('/idea/delete', { _Id: ideaId }, function (text, xml, xhr) {
+            webix.ajax().del('/idea/delete', { _id: ideaId }, function (text, xml, xhr) {
               var result = xml.json();
               if (result.status) {
                 $$('ideaTable').clearAll();
-                $$('ideaTable').load('/idea');
+                $$('ideaTable').load('/idea/get');
               } else {
                 webix.message({ type: 'error', text: result.message });
               }
             });
           },
           "ideaOver": function (e, id, object) {
-            var ideaId = $$('ideaTable').getItem(id)._id;
+            var item = $$('ideaTable').getItem(id);
+            var ideaId = item._id;
+            if (item.status != '已回复') {
+              return webix.message({ type: "error", text: '不可完结' });
+            }
             webix.ajax().put('/idea/over', { _id: ideaId }, function (text, xml, xhr) {
+
               var result = xml.json();
               if (result.status) {
                 if (result.status) {
                   $$('ideaTable').clearAll();
-                  $$('ideaTable').load('/idea');
+                  $$('ideaTable').load('/idea/get');
                 } else {
                   webix.message({ type: 'error', text: result.message });
                 }
@@ -145,19 +150,35 @@
             },
             { view: 'text', label: '反馈内容', name: 'context' },
             { view: 'text', label: '联系手机', name: 'phoneNum' },
+            { view: 'list', scroll: false, id: 'photoList', type: 'uploader' },
+            {
+              view: "uploader", value: '图片上传', id: 'photo',
+              upload: '/idea/photoUpload', field: 'upload',
+              autosend: false, name: 'photo', link: 'photoList'
+            },
             {
               cols: [
                 {
                   view: 'button', value: '提交', type: 'form', click: function () {
                     var ideaForm = $$('ideaForm').getValues();
-                    //提交意见
-                    webix.ajax().post('/idea/put', ideaForm, function (xml, data) {
-                      var result = data.json();
-                      if (result.status) {
-                        $$('quizWindow').hide();
-                        $$('ideaTable').clearAll();
-                        $$('ideaTable').load('/idea/get');
+                    var $$photo = $$('photo');
+                    $$photo.send(function (result) {
+                      if (result && result.status === 'error') {
+                        return webix.message({ type: 'error', text: result.message });
                       }
+                      if (result) {
+                        ideaForm.fileName = result.fileName;
+                        ideaForm.filePath = result.filePath;
+                      }
+                      //提交意见
+                      webix.ajax().post('/idea/put', ideaForm, function (xml, data) {
+                        var result = data.json();
+                        if (result.status) {
+                          $$('quizWindow').hide();
+                          $$('ideaTable').clearAll();
+                          $$('ideaTable').load('/idea/get');
+                        }
+                      });
                     });
                   }
                 },

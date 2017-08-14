@@ -67,8 +67,9 @@ router.post('/reg', function (req, res) {
 
     //检查用户名是否已经存在
     // User.fi
+    // User.fin
     User.find({ userName: req.body.userName }, function (err, user) {
-        if (!user.length) {
+        if (user.length) {
             err = '用户名已存在';
         }
         if (err) {
