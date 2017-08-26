@@ -3,25 +3,17 @@
  */
 var mongoose = require('./mongoose');
 
-/**
- *     	this.productType = idea.productType;//产品类型
-	this.headLine = idea.headLine;//标题
-	this.phoneNum = idea.phoneNum;//联系方式
-	this.status = idea.status;//状态 （待回复/已回复/已完结）
-	this.reply = idea.reply;
-	this.user_id = idea.user_id;//关联用户
- */
 var ideaSchema = new mongoose.Schema({
-    productType: String,
-    headLine: String,
-    phoneNum: String,
-    status: String,
-    reply: String,
-    publishDate: Date,
-    replyDate: Date,
-    fileName: Array,
-    filePath: Array,
-    user_id: String
+    productType: String, //产品类型
+    headLine: String,  //标题
+    phoneNum: String,  //联系方式
+    status: String,    //状态 已回复/未回复/已完成
+    reply: String,      //回复
+    publishDate: Date,  //发布日期
+    replyDate: Date,    //回复日期
+    fileName: Array,    //图片名称
+    filePath: Array,    //文件路径
+    user_id: String    //引用用户ID
 });
 
 module.exports = mongoose.model('idea', ideaSchema)
